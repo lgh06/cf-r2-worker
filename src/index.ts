@@ -33,7 +33,7 @@ export default {
 		if(pwd == Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(18).toUpperCase()){
 
 		}else{
-			return new Response('forbidden', { status: 403 })
+			return new Response('forbidden Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(**).to*****()', { status: 403 })
 		}
 
     const objectName = url.pathname.slice(1)
