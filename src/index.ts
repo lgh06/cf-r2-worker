@@ -62,7 +62,7 @@ export default {
 					}})
 				}else{
 					if(listing && listing.objects && listing.objects.length){
-						return new Response(listing.objects.map(o => `<a href="${o.key}">`+o.key+'</a>').join('<br/>'), {headers: {
+						return new Response(listing.objects.map(o => `<a href="${o.key}?pwd=${pwd}">`+o.key+'</a>').join('<br/>'), {headers: {
 							'content-type': 'text/html; charset=UTF-8',
 						}})
 					}
