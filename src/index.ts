@@ -88,6 +88,11 @@ export default {
           headers.set("content-range", `bytes ${object.range.offset}-${object.range.end ?? object.size - 1}/${object.size}`)
         }
         headers.set('cache-control', "max-age=2592000")
+        headers.delete("report-to")
+        headers.delete("nel")
+        headers.delete("priority")
+        headers.delete("date")
+        headers.delete("server")
         const status = object.body ? (request.headers.get("range") !== null ? 206 : 200) : 304
         return new Response(object.body, {
           headers,
