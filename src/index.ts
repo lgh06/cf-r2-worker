@@ -30,13 +30,15 @@ export default {
     const url = new URL(request.url)
 		let pwd = url.searchParams.get('pwd') ?? undefined;
 
-		if(pwd == Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(18).toUpperCase()){
+		if(  url.pathname.startsWith("/blog")  // /blog 路径公开
+        || pwd == Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(18).toUpperCase()
+    ){
 
 		}else{
 			return new Response('forbidden Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(**).to*****()', { status: 403 })
 		}
 
-    const objectName = url.pathname.slice(1)
+    const objectName = url.pathname.slice(1) // remove first / in pathname
 
     console.log(`${request.method} object ${objectName}: ${request.url}`)
 
