@@ -61,18 +61,26 @@ export default {
           if (object === null) {
             // 请求腾讯云
             // url.pathname 开头带斜杠   objectName 开头不带斜杠
-            let arrayBuf = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname).then(res => res.arrayBuffer())
-
-            await env.MY_BUCKET.put(objectNameReRouted, arrayBuf, {
-              httpMetadata: {
-                cacheControl: "max-age=2592000",
+            try {
+              let res = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname);
+              if(res.status !== 200){
+                return objectNotFound(objectName)
               }
-            })
-
-            object = await env.MY_BUCKET.get(objectNameReRouted, {
-              range: request.headers,
-              onlyIf: request.headers,
-            });
+              let arrayBuf = await res.arrayBuffer();
+  
+              await env.MY_BUCKET.put(objectNameReRouted, arrayBuf, {
+                httpMetadata: {
+                  cacheControl: "max-age=2592000",
+                }
+              })
+  
+              object = await env.MY_BUCKET.get(objectNameReRouted, {
+                range: request.headers,
+                onlyIf: request.headers,
+              });
+            } catch (error) {
+              return objectNotFound(objectName)
+            }
           }
         } else {
           object = await env.MY_BUCKET.get(objectName, {
@@ -82,18 +90,26 @@ export default {
 
           if (object === null) {
             // 请求腾讯云
-
-            let arrayBuf = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname).then(res => res.arrayBuffer())
-
-            await env.MY_BUCKET.put(objectName, arrayBuf, {
-              httpMetadata: {
-                cacheControl: "max-age=2592000",
+            try {
+              let res = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname);
+              if(res.status !== 200){
+                return objectNotFound(objectName)
               }
-            })
-            object = await env.MY_BUCKET.get(objectName, {
-              range: request.headers,
-              onlyIf: request.headers,
-            })
+              let arrayBuf = await res.arrayBuffer();
+  
+              await env.MY_BUCKET.put(objectName, arrayBuf, {
+                httpMetadata: {
+                  cacheControl: "max-age=2592000",
+                }
+              })
+              object = await env.MY_BUCKET.get(objectName, {
+                range: request.headers,
+                onlyIf: request.headers,
+              })
+            } catch (error) {
+              return objectNotFound(objectName)
+            }
+
             
           }
         }
