@@ -28,56 +28,77 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
 
     const url = new URL(request.url)
-		let pwd = url.searchParams.get('pwd') ?? undefined;
+    let pwd = url.searchParams.get('pwd') ?? undefined;
 
-		if(  url.pathname.startsWith("/blog")  // /blog 路径公开
-        || pwd == Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(18).toUpperCase()
-    ){
+    if (url.pathname.startsWith("/blog")  // /blog 路径公开
+      || pwd == Number(parseInt("" + Date.now() / (3600 * 1000 * 24), 10)).toString(18).toUpperCase()
+    ) {
 
-		}else{
-			return new Response('forbidden Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(**).to*****()', { status: 403 })
-		}
+    } else {
+      return new Response('forbidden Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(**).to*****()', { status: 403 })
+    }
 
     const objectName = url.pathname.slice(1) // remove first / in pathname
+    let objectNameWithoutMark = objectName.substring(0, objectName.length - 2); // remove end !1  so it is blog/2024/111.jpg Now
+
 
     console.log(`${request.method} object ${objectName}: ${request.url}`)
 
     if (request.method === 'GET' || request.method === 'HEAD') {
       if (objectName === '') {
-        if (request.method == 'HEAD') {
-          return new Response(undefined, { status: 400 })
-        }
-
-        const options: R2ListOptions = {
-          prefix: url.searchParams.get('prefix') ?? url.searchParams.get('path') ?? undefined,
-          delimiter: url.searchParams.get('delimiter') ?? undefined,
-          cursor: url.searchParams.get('cursor') ?? undefined,
-          include: undefined //['customMetadata', 'httpMetadata'],
-        }
-				let json = url.searchParams.get('json') ?? undefined;
-        console.log(JSON.stringify(options))
-
-        const listing = await env.MY_BUCKET.list(options)
-				if(json){
-					return new Response(JSON.stringify(listing), {headers: {
-						'content-type': 'application/json; charset=UTF-8',
-					}})
-				}else{
-					if(listing && listing.objects && listing.objects.length){
-						return new Response(listing.objects.map(o => `<a href="${o.key}?pwd=${pwd}">`+o.key+'</a>').join('<br/>'), {headers: {
-							'content-type': 'text/html; charset=UTF-8',
-						}})
-					}
-				}
+        return new Response(undefined, { status: 400 })
       }
 
       if (request.method === 'GET') {
-        const object = await env.MY_BUCKET.get(objectName, {
-          range: request.headers,
-          onlyIf: request.headers,
-        })
+        let object;
+        if (objectName.endsWith("!1")) {
+          // blog/2024/111.jpg 去 blog1024/2024/111.jpg 取
+          let objectNameReRouted = objectNameWithoutMark.replace( objectNameWithoutMark.split("/")[0], objectNameWithoutMark.split("/")[0] + "1024");
+          object = await env.MY_BUCKET.get(objectNameReRouted, {
+            range: request.headers,
+            onlyIf: request.headers,
+          });
+          if (object === null) {
+            // 请求腾讯云
+            // url.pathname 开头带斜杠   objectName 开头不带斜杠
+            let arrayBuf = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname).then(res => res.arrayBuffer())
 
-        if (object === null) {
+            await env.MY_BUCKET.put(objectNameReRouted, arrayBuf, {
+              httpMetadata: {
+                cacheControl: "max-age=2592000",
+              }
+            })
+
+            object = await env.MY_BUCKET.get(objectNameReRouted, {
+              range: request.headers,
+              onlyIf: request.headers,
+            });
+          }
+        } else {
+          object = await env.MY_BUCKET.get(objectName, {
+            range: request.headers,
+            onlyIf: request.headers,
+          })
+
+          if (object === null) {
+            // 请求腾讯云
+
+            let arrayBuf = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname).then(res => res.arrayBuffer())
+
+            await env.MY_BUCKET.put(objectName, arrayBuf, {
+              httpMetadata: {
+                cacheControl: "max-age=2592000",
+              }
+            })
+            object = await env.MY_BUCKET.get(objectName, {
+              range: request.headers,
+              onlyIf: request.headers,
+            })
+            
+          }
+        }
+
+        if(object === null){
           return objectNotFound(objectName)
         }
 
@@ -100,6 +121,9 @@ export default {
         })
       }
 
+
+
+      // below is request method HEAD
       const object = await env.MY_BUCKET.head(objectName)
 
       if (object === null) {
@@ -113,21 +137,6 @@ export default {
         headers,
       })
     }
-    // if (request.method === 'PUT' || request.method == 'POST') {
-    //   const object = await env.MY_BUCKET.put(objectName, request.body, {
-    //     httpMetadata: request.headers,
-    //   })
-    //   return new Response(null, {
-    //     headers: {
-    //       'etag': object.httpEtag,
-    //     }
-    //   })
-    // }
-    // if (request.method === 'DELETE') {
-    //   await env.MY_BUCKET.delete(url.pathname.slice(1))
-    //   return new Response()
-    // }
-
     return new Response(`Unsupported method`, {
       status: 400
     })
