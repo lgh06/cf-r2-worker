@@ -38,7 +38,8 @@ export default {
       return new Response('forbidden Number(parseInt("" + Date.now()/(3600 * 1000 * 24),10)).toString(**).to*****()', { status: 403 })
     }
 
-    const objectName = url.pathname.slice(1) // remove first / in pathname
+    let objectName = url.pathname.slice(1) // remove first / in pathname
+    objectName = decodeURIComponent(objectName);
     let objectNameWithoutMark = objectName.substring(0, objectName.length - 2); // remove end !1  so it is blog/2024/111.jpg Now
 
 
@@ -62,7 +63,7 @@ export default {
             // 请求腾讯云
             // url.pathname 开头带斜杠   objectName 开头不带斜杠
             try {
-              let res = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname);
+              let res = await fetch("https://d-1251786267.file.myqcloud.com" + "/" + objectName);
               if(res.status !== 200){
                 return objectNotFound(objectName)
               }
@@ -91,7 +92,7 @@ export default {
           if (object === null) {
             // 请求腾讯云
             try {
-              let res = await fetch("https://d-1251786267.file.myqcloud.com" + url.pathname);
+              let res = await fetch("https://d-1251786267.file.myqcloud.com" + "/" + objectName);
               if(res.status !== 200){
                 return objectNotFound(objectName)
               }
